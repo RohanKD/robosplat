@@ -1,0 +1,24 @@
+# Data
+data/
+vendor/
+*.ply
+*.splat
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+
+# Node
+node_modules/
+dist/
+
+# OS
+.DS_Store
+
+# SAM2 checkpoints
+checkpoints/
+
+# Environment
+.env
