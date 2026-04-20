@@ -12,8 +12,11 @@ fi
 cd "$OPENSPLAT_DIR"
 echo "Building OpenSplat with MPS support..."
 
+SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+TORCH_CMAKE=$("$SCRIPT_DIR/backend/.venv/bin/python" -c "import torch; print(torch.utils.cmake_prefix_path)" 2>/dev/null || echo "")
+
 mkdir -p build && cd build
-cmake .. -GNinja -DGPU_RUNTIME=MPS
+cmake .. -GNinja -DGPU_RUNTIME=MPS -DCMAKE_PREFIX_PATH="$TORCH_CMAKE"
 ninja
 
 echo "OpenSplat built successfully at: $OPENSPLAT_DIR/build/opensplat"
