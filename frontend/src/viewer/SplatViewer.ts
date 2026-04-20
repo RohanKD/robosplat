@@ -5,26 +5,29 @@ export class SplatViewer {
   private viewer: any;
   private container: HTMLElement;
   private segmentBoxes: Map<number, THREE.Box3Helper> = new Map();
-  private threeScene: THREE.Scene;
   private onSegmentClick?: (segmentId: number) => void;
   private raycaster = new THREE.Raycaster();
   private mouse = new THREE.Vector2();
+  private boundHandleClick: (e: MouseEvent) => void;
 
   constructor(container: HTMLElement) {
     this.container = container;
-    this.threeScene = new THREE.Scene();
+    this.boundHandleClick = this.handleClick.bind(this);
+    this.container.addEventListener("click", this.boundHandleClick);
   }
 
   async loadSplat(url: string) {
-    // Clear previous viewer
     if (this.viewer) {
       try {
         this.viewer.dispose();
       } catch {
         // ignore disposal errors
       }
-      this.container.innerHTML = "";
+      // Clear any canvases left behind
+      const canvases = this.container.querySelectorAll("canvas");
+      canvases.forEach((c) => c.remove());
     }
+    this.clearSegmentBoxes();
 
     this.viewer = new GaussianSplats3D.Viewer({
       cameraUp: [0, -1, 0],
@@ -32,18 +35,14 @@ export class SplatViewer {
       initialCameraLookAt: [0, 0, 0],
       rootElement: this.container,
       sceneRevealMode: GaussianSplats3D.SceneRevealMode.Instant,
-      crossOriginIsolation: false,
     });
 
     await this.viewer.addSplatScene(url, {
-      showLoadingUI: false,
+      showLoadingUI: true,
       progressiveLoad: true,
     });
 
     this.viewer.start();
-
-    // Add click handler for segment selection
-    this.container.addEventListener("click", this.handleClick);
   }
 
   addSegmentBoxes(
@@ -55,6 +54,9 @@ export class SplatViewer {
     }>
   ) {
     this.clearSegmentBoxes();
+
+    const scene = this.viewer?.threeScene;
+    if (!scene) return;
 
     for (const seg of segments) {
       const box = new THREE.Box3(
@@ -68,26 +70,24 @@ export class SplatViewer {
       );
       const helper = new THREE.Box3Helper(box, color);
       helper.userData = { segmentId: seg.segment_id };
-      this.threeScene.add(helper);
+      scene.add(helper);
       this.segmentBoxes.set(seg.segment_id, helper);
-
-      // Add to viewer's three scene if accessible
-      if (this.viewer?.threeScene) {
-        this.viewer.threeScene.add(helper);
-      }
     }
   }
 
   highlightSegment(segmentId: number) {
     for (const [id, box] of this.segmentBoxes) {
-      const mat = (box as any).material as THREE.LineBasicMaterial;
+      const mat = box.material as THREE.LineBasicMaterial;
       if (id === segmentId) {
         mat.color.set(0xffff00);
         mat.linewidth = 2;
+        mat.opacity = 1;
       } else {
         mat.color.set(0x888888);
         mat.linewidth = 1;
+        mat.opacity = 0.5;
       }
+      mat.transparent = true;
     }
   }
 
@@ -103,7 +103,7 @@ export class SplatViewer {
     this.onSegmentClick = callback;
   }
 
-  private handleClick = (event: MouseEvent) => {
+  private handleClick(event: MouseEvent) {
     if (!this.viewer?.camera || !this.onSegmentClick) return;
 
     const rect = this.container.getBoundingClientRect();
@@ -112,20 +112,19 @@ export class SplatViewer {
 
     this.raycaster.setFromCamera(this.mouse, this.viewer.camera);
 
-    // Check intersection with bounding boxes
-    const boxes = Array.from(this.segmentBoxes.values());
-    for (const box of boxes) {
+    for (const [, box] of this.segmentBoxes) {
       const b3 = (box as any).box as THREE.Box3;
       if (this.raycaster.ray.intersectsBox(b3)) {
-        this.onSegmentClick(box.userData.segmentId);
-        this.highlightSegment(box.userData.segmentId);
+        const segId = box.userData.segmentId;
+        this.onSegmentClick(segId);
+        this.highlightSegment(segId);
         return;
       }
     }
-  };
+  }
 
   dispose() {
-    this.container.removeEventListener("click", this.handleClick);
+    this.container.removeEventListener("click", this.boundHandleClick);
     this.clearSegmentBoxes();
     if (this.viewer) {
       try {

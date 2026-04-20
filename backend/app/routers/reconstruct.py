@@ -1,5 +1,5 @@
 import asyncio
-from fastapi import APIRouter, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 
 from app.config import DATA_DIR
 from app.models.schemas import JobResponse, JobStatus
@@ -36,7 +36,7 @@ async def start_reconstruction(project_id: str, background_tasks: BackgroundTask
     """Start the 3D reconstruction pipeline."""
     project_dir = DATA_DIR / project_id
     if not project_dir.exists():
-        return JobResponse(job_id="", status=JobStatus.failed, message="Project not found")
+        raise HTTPException(status_code=404, detail="Project not found")
 
     job_id = create_job()
     update_job(job_id, status=JobStatus.running, message="Starting reconstruction...")

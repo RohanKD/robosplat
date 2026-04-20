@@ -20,7 +20,8 @@ async def create_project(files: list[UploadFile] = File(...)):
     count = 0
     for f in files:
         if f.content_type and f.content_type.startswith("image/"):
-            dest = image_dir / f.filename
+            safe_name = Path(f.filename).name
+            dest = image_dir / safe_name
             with open(dest, "wb") as out:
                 shutil.copyfileobj(f.file, out)
             count += 1

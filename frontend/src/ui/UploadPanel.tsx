@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
 import { createProject, startReconstruction, pollJob, type Job } from "../api/client";
 
 interface Props {
@@ -11,10 +11,18 @@ export function UploadPanel({ onProjectReady }: Props) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const abortRef = useRef(false);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      abortRef.current = true;
+    };
+  }, []);
 
   const handleFiles = useCallback(async (files: FileList) => {
     if (files.length === 0) return;
-
+    abortRef.current = false;
     setUploading(true);
     setStatus(`Uploading ${files.length} images...`);
 
@@ -23,27 +31,33 @@ export function UploadPanel({ onProjectReady }: Props) {
       setStatus(`Uploaded ${image_count} images. Starting reconstruction...`);
 
       const job = await startReconstruction(project_id);
-      await pollUntilDone(job.job_id, project_id);
-    } catch (err) {
-      setStatus(`Error: ${err}`);
+      pollUntilDone(job.job_id, project_id);
+    } catch (err: any) {
+      setStatus(`Error: ${err?.message || String(err)}`);
       setUploading(false);
     }
   }, []);
 
-  const pollUntilDone = async (jobId: string, projectId: string) => {
+  const pollUntilDone = (jobId: string, projectId: string) => {
     const poll = async () => {
-      const job: Job = await pollJob(jobId);
-      setProgress(job.progress);
-      setStatus(job.message);
+      if (abortRef.current) return;
+      try {
+        const job: Job = await pollJob(jobId);
+        setProgress(job.progress);
+        setStatus(job.message);
 
-      if (job.status === "completed") {
+        if (job.status === "completed") {
+          setUploading(false);
+          onProjectReady(projectId);
+        } else if (job.status === "failed") {
+          setUploading(false);
+          setStatus(`Failed: ${job.message}`);
+        } else {
+          setTimeout(poll, 2000);
+        }
+      } catch {
+        setStatus("Lost connection to server");
         setUploading(false);
-        onProjectReady(projectId);
-      } else if (job.status === "failed") {
-        setUploading(false);
-        setStatus(`Failed: ${job.message}`);
-      } else {
-        setTimeout(poll, 2000);
       }
     };
     poll();
@@ -51,6 +65,7 @@ export function UploadPanel({ onProjectReady }: Props) {
 
   return (
     <div className="upload-panel">
+      <h3>Upload Workspace Photos</h3>
       <div
         className={`drop-zone ${dragOver ? "drag-over" : ""}`}
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
@@ -77,9 +92,13 @@ export function UploadPanel({ onProjectReady }: Props) {
           </div>
         ) : (
           <>
-            <div className="drop-icon">+</div>
+            <div className="drop-icon">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#4a9eff" strokeWidth="1.5">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+              </svg>
+            </div>
             <p>Drop photos here or click to upload</p>
-            <p className="hint">Upload 20-30 overlapping photos of your workspace</p>
+            <p className="hint">20-30 overlapping photos of your workspace</p>
           </>
         )}
       </div>
