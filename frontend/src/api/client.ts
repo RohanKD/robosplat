@@ -1,4 +1,4 @@
-const API = "http://localhost:8000/api";
+const API = "/api";
 
 export async function createProject(files: FileList): Promise<{ project_id: string; image_count: number }> {
   const form = new FormData();

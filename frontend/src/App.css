@@ -257,3 +257,54 @@ h3 {
   font-size: 14px;
   font-weight: 600;
 }
+
+/* Demo section */
+.demo-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.divider {
+  text-align: center;
+  color: #555;
+  font-size: 12px;
+  position: relative;
+  margin: 8px 0;
+}
+
+.divider span {
+  background: #111118;
+  padding: 0 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.divider::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  border-top: 1px solid #333;
+}
+
+.demo-btn {
+  background: #1a1a2e;
+  border: 1px solid #333;
+}
+
+.demo-btn:hover {
+  background: #2a2a3e;
+  border-color: #4a9eff;
+}
+
+.back-btn {
+  background: transparent;
+  border: 1px solid #333;
+  margin-top: 8px;
+}
+
+.back-btn:hover {
+  background: #1a1a24;
+}
