@@ -133,6 +133,47 @@ function App() {
           </nav>
 
           <section className="hero">
+            <div className="hero-visual">
+              <div className="splat-animation">
+                {/* Animated Gaussian splats */}
+                {Array.from({ length: 40 }, (_, i) => (
+                  <div
+                    key={i}
+                    className="splat-dot"
+                    style={{
+                      left: `${15 + Math.sin(i * 0.8) * 35 + 35}%`,
+                      top: `${15 + Math.cos(i * 0.6) * 30 + 30}%`,
+                      width: `${8 + Math.random() * 20}px`,
+                      height: `${8 + Math.random() * 20}px`,
+                      background: [
+                        'rgba(74,158,255,0.6)',
+                        'rgba(168,85,247,0.5)',
+                        'rgba(52,211,153,0.5)',
+                        'rgba(236,72,153,0.4)',
+                        'rgba(251,146,60,0.4)',
+                      ][i % 5],
+                      animationDelay: `${i * 0.1}s`,
+                    }}
+                  />
+                ))}
+                <div className="splat-label">3D Gaussian Splat</div>
+              </div>
+              <div className="hero-arrow">
+                <svg width="48" height="24" viewBox="0 0 48 24" fill="none">
+                  <path d="M0 12h40M34 4l8 8-8 8" stroke="#333" strokeWidth="2" />
+                </svg>
+              </div>
+              <div className="hero-output">
+                <div className="output-grid">
+                  <div className="output-frame" />
+                  <div className="output-frame" />
+                  <div className="output-frame" />
+                  <div className="output-frame" />
+                </div>
+                <div className="splat-label">Training Data</div>
+              </div>
+            </div>
+
             <div className="hero-badge">Real2Sim Pipeline for Physical AI</div>
             <h1>
               Turn photos into<br />
