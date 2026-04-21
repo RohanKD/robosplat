@@ -10,17 +10,17 @@ const DEMO_SCENES = [
   {
     name: "Bonsai",
     description: "Indoor tabletop scene",
-    url: "https://huggingface.co/cakewalk/splat-data/resolve/main/bonsai.splat",
+    url: "https://huggingface.co/datasets/dylanebert/3dgs/resolve/main/bonsai/bonsai-7k.splat",
   },
   {
-    name: "Train",
-    description: "Model train on tracks",
-    url: "https://huggingface.co/cakewalk/splat-data/resolve/main/train.splat",
+    name: "Kitchen",
+    description: "Full kitchen environment",
+    url: "https://huggingface.co/datasets/dylanebert/3dgs/resolve/main/kitchen/kitchen-7k.splat",
   },
   {
-    name: "Truck",
-    description: "Outdoor vehicle scene",
-    url: "https://huggingface.co/cakewalk/splat-data/resolve/main/truck.splat",
+    name: "Garden",
+    description: "Outdoor garden scene",
+    url: "https://huggingface.co/datasets/dylanebert/3dgs/resolve/main/garden/garden-7k.splat",
   },
 ];
 
@@ -34,6 +34,8 @@ function App() {
   const [segmenting, setSegmenting] = useState(false);
   const [demoMode, setDemoMode] = useState(false);
   const [loadingDemo, setLoadingDemo] = useState<string | null>(null);
+  const [viewerLoading, setViewerLoading] = useState(false);
+  const [viewerError, setViewerError] = useState<string>("");
   const viewerRef = useRef<SplatViewer | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -64,14 +66,18 @@ function App() {
 
   const handleDemoScene = async (scene: (typeof DEMO_SCENES)[0]) => {
     setLoadingDemo(scene.name);
+    setViewerLoading(true);
+    setViewerError("");
     setDemoMode(true);
     setStage("viewing");
     try {
       await loadSplatFromUrl(scene.url);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to load demo:", err);
+      setViewerError(`Failed to load ${scene.name}: ${err?.message || "Network error"}`);
     }
     setLoadingDemo(null);
+    setViewerLoading(false);
   };
 
   const handleSegment = async () => {
@@ -381,6 +387,20 @@ function App() {
                 <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
               </svg>
               <p>Upload photos or select a demo to begin</p>
+            </div>
+          )}
+          {viewerLoading && (
+            <div className="viewer-overlay">
+              <div className="loading-spinner" />
+              <p>Loading 3D scene...</p>
+            </div>
+          )}
+          {viewerError && (
+            <div className="viewer-overlay">
+              <p className="viewer-error">{viewerError}</p>
+              <button className="cta-secondary" onClick={handleBack} style={{ width: "auto", marginTop: 12 }}>
+                Go Back
+              </button>
             </div>
           )}
         </div>
